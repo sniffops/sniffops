@@ -57,3 +57,7 @@ web/.turbo/
 # Temporary files
 tmp/
 temp/
+
+# Internal
+research/
+tasks/
