@@ -65,11 +65,18 @@ func LogsHandler(
 		}
 		command += fmt.Sprintf(" --tail=%d", input.Lines)
 
+		// User intent 생성
+		userIntent := fmt.Sprintf("Get logs from pod %s in namespace %s", input.Pod, input.Namespace)
+		if input.Container != "" {
+			userIntent = fmt.Sprintf("Get logs from container %s in pod %s (namespace %s)", input.Container, input.Pod, input.Namespace)
+		}
+
 		// 초기 trace 레코드 생성
 		tr := &trace.Trace{
 			ID:             traceID,
 			SessionID:      sessionID,
 			Timestamp:      startTime.UnixMilli(),
+			UserIntent:     userIntent,
 			ToolName:       "sniff_logs",
 			Command:        command,
 			Namespace:      input.Namespace,
@@ -107,7 +114,7 @@ func LogsHandler(
 			tr.ErrorMessage = execErr.Error()
 		} else {
 			tr.Result = "success"
-			tr.Output = logs // 로그 전체 저장 (민감 정보 마스킹은 추후 적용)
+			tr.Output = trace.SanitizeOutput(logs) // 로그에서 민감 정보 sanitize
 			output.Logs = logs
 			// Count lines (rough estimate)
 			output.Lines = len(logs)

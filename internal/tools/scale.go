@@ -59,11 +59,15 @@ func ScaleHandler(
 		// Build command string (assume Deployment by default)
 		command := fmt.Sprintf("kubectl scale deployment -n %s %s --replicas=%d", input.Namespace, input.Name, input.Replicas)
 
+		// User intent 생성
+		userIntent := fmt.Sprintf("Scale %s to %d replicas in namespace %s", input.Name, input.Replicas, input.Namespace)
+
 		// 초기 trace 레코드 생성
 		tr := &trace.Trace{
 			ID:             traceID,
 			SessionID:      sessionID,
 			Timestamp:      startTime.UnixMilli(),
+			UserIntent:     userIntent,
 			ToolName:       "sniff_scale",
 			Command:        command,
 			Namespace:      input.Namespace,
@@ -129,9 +133,9 @@ func ScaleHandler(
 			tr.ErrorMessage = execErr.Error()
 		} else {
 			tr.Result = "success"
-			// Output을 JSON으로 저장
+			// Output을 JSON으로 저장 (민감 정보 sanitize 적용)
 			outputJSON, _ := json.Marshal(output)
-			tr.Output = string(outputJSON)
+			tr.Output = trace.SanitizeOutput(string(outputJSON))
 		}
 
 		// Trace 저장

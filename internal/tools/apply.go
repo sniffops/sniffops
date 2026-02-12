@@ -55,13 +55,17 @@ func ApplyHandler(
 		// Build command string
 		command := "kubectl apply -f -"
 
+		// User intent 생성
+		userIntent := "Apply Kubernetes resource from manifest"
+
 		// 초기 trace 레코드 생성
 		tr := &trace.Trace{
-			ID:        traceID,
-			SessionID: sessionID,
-			Timestamp: startTime.UnixMilli(),
-			ToolName:  "sniff_apply",
-			Command:   command,
+			ID:         traceID,
+			SessionID:  sessionID,
+			Timestamp:  startTime.UnixMilli(),
+			UserIntent: userIntent,
+			ToolName:   "sniff_apply",
+			Command:    command,
 		}
 
 		// K8s API 호출 (Apply)
@@ -106,9 +110,9 @@ func ApplyHandler(
 			tr.ErrorMessage = execErr.Error()
 		} else {
 			tr.Result = "success"
-			// Output을 JSON으로 저장
+			// Output을 JSON으로 저장 (민감 정보 sanitize 적용)
 			outputJSON, _ := json.Marshal(output)
-			tr.Output = string(outputJSON)
+			tr.Output = trace.SanitizeOutput(string(outputJSON))
 		}
 
 		// Trace 저장

@@ -59,11 +59,15 @@ func DeleteHandler(
 		// Build command string
 		command := fmt.Sprintf("kubectl delete %s -n %s %s", input.Kind, input.Namespace, input.Name)
 
+		// User intent 생성
+		userIntent := fmt.Sprintf("Delete %s %s in namespace %s", input.Kind, input.Name, input.Namespace)
+
 		// 초기 trace 레코드 생성
 		tr := &trace.Trace{
 			ID:             traceID,
 			SessionID:      sessionID,
 			Timestamp:      startTime.UnixMilli(),
+			UserIntent:     userIntent,
 			ToolName:       "sniff_delete",
 			Command:        command,
 			Namespace:      input.Namespace,
@@ -105,9 +109,9 @@ func DeleteHandler(
 			tr.ErrorMessage = execErr.Error()
 		} else {
 			tr.Result = "success"
-			// Output을 JSON으로 저장
+			// Output을 JSON으로 저장 (민감 정보 sanitize 적용)
 			outputJSON, _ := json.Marshal(output)
-			tr.Output = string(outputJSON)
+			tr.Output = trace.SanitizeOutput(string(outputJSON))
 		}
 
 		// Trace 저장

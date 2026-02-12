@@ -67,11 +67,15 @@ func ExecHandler(
 		}
 		kubectlCmd += fmt.Sprintf(" -- %s", commandStr)
 
+		// User intent 생성
+		userIntent := fmt.Sprintf("Execute command '%s' in pod %s (namespace %s)", commandStr, input.Pod, input.Namespace)
+
 		// 초기 trace 레코드 생성
 		tr := &trace.Trace{
 			ID:             traceID,
 			SessionID:      sessionID,
 			Timestamp:      startTime.UnixMilli(),
+			UserIntent:     userIntent,
 			ToolName:       "sniff_exec",
 			Command:        kubectlCmd,
 			Namespace:      input.Namespace,
@@ -123,8 +127,8 @@ func ExecHandler(
 			tr.ErrorMessage = execErr.Error()
 		} else {
 			tr.Result = "success"
-			// Output을 저장 (민감 정보 마스킹은 추후 적용)
-			tr.Output = execOutput
+			// Output을 저장 (민감 정보 sanitize 적용)
+			tr.Output = trace.SanitizeOutput(execOutput)
 		}
 
 		// Trace 저장
