@@ -13,9 +13,13 @@ dist/
 # Output of the go coverage tool
 *.out
 coverage.txt
+coverage.*
+*.coverprofile
+profile.cov
 
 # Go workspace file
 go.work
+go.work.sum
 
 # Dependency directories
 vendor/
