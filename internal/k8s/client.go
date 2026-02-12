@@ -5,15 +5,18 @@ package k8s
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
@@ -21,10 +24,11 @@ import (
 
 // Client wraps the Kubernetes dynamic client for flexible resource operations.
 type Client struct {
-	dynamicClient dynamic.Interface
+	dynamicClient   dynamic.Interface
 	discoveryClient discovery.DiscoveryInterface
-	restMapper    meta.RESTMapper
-	config        *rest.Config
+	restMapper      meta.RESTMapper
+	config          *rest.Config
+	clientset       *kubernetes.Clientset // For pod logs
 }
 
 // NewClient creates a new Kubernetes client.
@@ -52,11 +56,18 @@ func NewClient() (*Client, error) {
 	}
 	restMapper := restmapper.NewDiscoveryRESTMapper(groupResources)
 
+	// Create clientset for pod logs
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create clientset: %w", err)
+	}
+
 	return &Client{
 		dynamicClient:   dynamicClient,
 		discoveryClient: discoveryClient,
 		restMapper:      restMapper,
 		config:          config,
+		clientset:       clientset,
 	}, nil
 }
 
@@ -189,4 +200,53 @@ func (c *Client) kindToGVR(kind string) (schema.GroupVersionResource, bool, erro
 // Config returns the underlying REST config (useful for debugging or extensions).
 func (c *Client) Config() *rest.Config {
 	return c.config
+}
+
+// LogsRequest defines parameters for pod log retrieval
+type LogsRequest struct {
+	Namespace string
+	Pod       string
+	Container string // Optional: if empty, uses first container
+	Lines     int64  // Number of lines to retrieve (default: 100)
+}
+
+// Logs retrieves pod logs
+func (c *Client) Logs(ctx context.Context, req LogsRequest) (string, error) {
+	if req.Namespace == "" {
+		return "", fmt.Errorf("namespace is required")
+	}
+	if req.Pod == "" {
+		return "", fmt.Errorf("pod name is required")
+	}
+
+	// Default lines to 100 if not specified
+	if req.Lines <= 0 {
+		req.Lines = 100
+	}
+
+	// Build pod log options
+	opts := &corev1.PodLogOptions{
+		TailLines: &req.Lines,
+	}
+
+	// Add container if specified
+	if req.Container != "" {
+		opts.Container = req.Container
+	}
+
+	// Get logs
+	logStream, err := c.clientset.CoreV1().Pods(req.Namespace).GetLogs(req.Pod, opts).Stream(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to get pod logs namespace=%s pod=%s container=%s: %w",
+			req.Namespace, req.Pod, req.Container, err)
+	}
+	defer logStream.Close()
+
+	// Read logs
+	logs, err := io.ReadAll(logStream)
+	if err != nil {
+		return "", fmt.Errorf("failed to read pod logs: %w", err)
+	}
+
+	return string(logs), nil
 }

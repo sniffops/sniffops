@@ -70,16 +70,18 @@ func runServe() error {
 
 	// 서버 초기화
 	cfg := &server.Config{
-		// TODO: SQLite DB 경로, K8s client 설정 등 추가 예정
+		TraceDBPath: "", // 빈 문자열 = 기본 경로 (~/.sniffops/traces.db)
 	}
 
 	srv, err := server.New(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to create server: %w", err)
 	}
+	defer srv.Close()
 
 	fmt.Fprintf(os.Stderr, "SniffOps MCP server started (session: %s)\n", srv.GetSessionID())
-	fmt.Fprintln(os.Stderr, "Registered tools: sniff_ping")
+	fmt.Fprintln(os.Stderr, "Registered tools: sniff_ping, sniff_get, sniff_logs")
+	fmt.Fprintln(os.Stderr, "Trace database: ~/.sniffops/traces.db")
 	fmt.Fprintln(os.Stderr, "Listening on stdio...")
 
 	// MCP 서버 실행 (blocking)
