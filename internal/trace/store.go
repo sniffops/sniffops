@@ -63,6 +63,12 @@ func (s *Store) Close() error {
 	return nil
 }
 
+// DB returns the underlying *sql.DB for custom queries
+// This is useful for advanced queries like aggregations in sniff_stats tool
+func (s *Store) DB() *sql.DB {
+	return s.db
+}
+
 // initSchema creates the traces and metadata tables if they don't exist
 func (s *Store) initSchema() error {
 	schema := `

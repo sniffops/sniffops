@@ -50,9 +50,57 @@ func RegisterAllTools(
 		)
 	}
 
-	// TODO: Add more tools in future tasks
-	// - sniff_apply (TASK-010)
-	// - sniff_delete (TASK-011)
-	// - sniff_scale (TASK-012)
-	// - sniff_exec (TASK-013)
+	// 4. sniff_apply - Apply K8s resources (TASK-010)
+	if k8sClient != nil && traceStore != nil && riskEvaluator != nil {
+		mcp.AddTool(
+			server,
+			GetApplyToolDefinition(),
+			ApplyHandler(k8sClient, traceStore, riskEvaluator, sessionID),
+		)
+	}
+
+	// 5. sniff_delete - Delete K8s resources (TASK-010) ⚠️  CRITICAL
+	if k8sClient != nil && traceStore != nil && riskEvaluator != nil {
+		mcp.AddTool(
+			server,
+			GetDeleteToolDefinition(),
+			DeleteHandler(k8sClient, traceStore, riskEvaluator, sessionID),
+		)
+	}
+
+	// 6. sniff_scale - Scale Deployments/StatefulSets (TASK-010)
+	if k8sClient != nil && traceStore != nil && riskEvaluator != nil {
+		mcp.AddTool(
+			server,
+			GetScaleToolDefinition(),
+			ScaleHandler(k8sClient, traceStore, riskEvaluator, sessionID),
+		)
+	}
+
+	// 7. sniff_exec - Execute commands in pods (TASK-010) ⚠️  CRITICAL
+	if k8sClient != nil && traceStore != nil && riskEvaluator != nil {
+		mcp.AddTool(
+			server,
+			GetExecToolDefinition(),
+			ExecHandler(k8sClient, traceStore, riskEvaluator, sessionID),
+		)
+	}
+
+	// 8. sniff_traces - Query trace records (TASK-010)
+	if traceStore != nil {
+		mcp.AddTool(
+			server,
+			GetTracesToolDefinition(),
+			TracesHandler(traceStore),
+		)
+	}
+
+	// 9. sniff_stats - Get trace statistics (TASK-010)
+	if traceStore != nil {
+		mcp.AddTool(
+			server,
+			GetStatsToolDefinition(),
+			StatsHandler(traceStore),
+		)
+	}
 }
