@@ -33,9 +33,9 @@ vendor/
 *.db-shm
 *.db-wal
 
-# Build artifacts
-sniffops
-cmd/sniffops/sniffops
+# Build artifacts (바이너리만 무시, 소스 코드는 추적)
+/sniffops
+/cmd/sniffops/sniffops
 
 # Web UI build artifacts
 web/dist/
