@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -80,20 +81,17 @@ func ScaleHandler(
 		})
 
 		// K8s API 호출 (Scale) - try Deployment first, then StatefulSet
-		var result interface{}
 		var execErr error
 		var kind string
 
 		// Try Deployment first
-		deploymentResult, err := k8sClient.Scale(ctx, input.Namespace, "Deployment", input.Name, input.Replicas)
+		_, err := k8sClient.Scale(ctx, input.Namespace, "Deployment", input.Name, input.Replicas)
 		if err == nil {
-			result = deploymentResult.Object
 			kind = "Deployment"
 		} else {
 			// Try StatefulSet if Deployment fails
-			statefulsetResult, err2 := k8sClient.Scale(ctx, input.Namespace, "StatefulSet", input.Name, input.Replicas)
+			_, err2 := k8sClient.Scale(ctx, input.Namespace, "StatefulSet", input.Name, input.Replicas)
 			if err2 == nil {
-				result = statefulsetResult.Object
 				kind = "StatefulSet"
 			} else {
 				// Both failed
@@ -138,7 +136,7 @@ func ScaleHandler(
 
 		// Trace 저장
 		if err := traceStore.Insert(tr); err != nil {
-			fmt.Fprintf(req.Session.LoggingChannel(), "Warning: failed to save trace: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Warning: failed to save trace: %v\n", err)
 		}
 
 		// 에러 발생 시 반환

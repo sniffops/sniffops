@@ -2,8 +2,8 @@ package tools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -129,7 +129,7 @@ func ExecHandler(
 
 		// Trace 저장
 		if err := traceStore.Insert(tr); err != nil {
-			fmt.Fprintf(req.Session.LoggingChannel(), "Warning: failed to save trace: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Warning: failed to save trace: %v\n", err)
 		}
 
 		// 에러 발생 시 반환

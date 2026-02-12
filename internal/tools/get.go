@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -125,7 +126,7 @@ func GetHandler(
 		// Trace 저장
 		if err := traceStore.Insert(tr); err != nil {
 			// Trace 저장 실패는 로깅만 하고 Tool 실행은 계속
-			fmt.Fprintf(req.Session.LoggingChannel(), "Warning: failed to save trace: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Warning: failed to save trace: %v\n", err)
 		}
 
 		// 에러 발생 시 반환
