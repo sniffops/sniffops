@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/spf13/cobra"
+	"github.com/sniffops/sniffops/internal/server"
 )
 
 var (
@@ -51,14 +55,39 @@ func main() {
 
 // runServe starts the MCP server (stdio transport)
 func runServe() error {
-	// TODO: MCP 서버 초기화
-	// 1. SQLite DB 초기화
-	// 2. K8s client 초기화
-	// 3. MCP 서버 생성 및 Tool 등록
-	// 4. stdio 통신 시작
-	fmt.Fprintln(os.Stderr, "SniffOps MCP server starting...")
-	fmt.Fprintln(os.Stderr, "MCP server implementation: TODO")
-	return fmt.Errorf("MCP server not implemented yet")
+	// Context with signal handling
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Signal handling (SIGINT, SIGTERM)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		fmt.Fprintln(os.Stderr, "\nSniffOps MCP server shutting down...")
+		cancel()
+	}()
+
+	// 서버 초기화
+	cfg := &server.Config{
+		// TODO: SQLite DB 경로, K8s client 설정 등 추가 예정
+	}
+
+	srv, err := server.New(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to create server: %w", err)
+	}
+
+	fmt.Fprintf(os.Stderr, "SniffOps MCP server started (session: %s)\n", srv.GetSessionID())
+	fmt.Fprintln(os.Stderr, "Registered tools: sniff_ping")
+	fmt.Fprintln(os.Stderr, "Listening on stdio...")
+
+	// MCP 서버 실행 (blocking)
+	if err := srv.Run(ctx); err != nil {
+		return fmt.Errorf("server run failed: %w", err)
+	}
+
+	return nil
 }
 
 // runWeb starts the web UI HTTP server
