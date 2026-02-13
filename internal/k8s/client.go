@@ -188,19 +188,126 @@ func (c *Client) ListResources(ctx context.Context, namespace, kind, labelSelect
 
 // kindToGVR converts a Kubernetes kind (e.g., "Pod", "Deployment") to GroupVersionResource.
 // It uses the REST mapper to resolve the GVR and determine if the resource is namespaced.
+// Falls back to hardcoded mappings if discovery fails.
 func (c *Client) kindToGVR(kind string) (schema.GroupVersionResource, bool, error) {
-	// Create a partially specified GVK (only Kind is known)
+	kindLower := strings.ToLower(kind)
+	
+	// For known kinds, use hardcoded GVR directly (most reliable)
+	if fallback, ok := knownGVRs[kindLower]; ok {
+		return fallback.gvr, fallback.namespaced, nil
+	}
+
+	// For unknown kinds, try REST mapper with known GVK
+	if gvk, ok := knownKinds[kindLower]; ok {
+		mapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+		if err == nil {
+			return mapping.Resource, mapping.Scope.Name() == meta.RESTScopeNameNamespace, nil
+		}
+	}
+
+	// Fall back to partial GVK lookup for completely unknown kinds
 	gvk := schema.GroupVersionKind{
 		Kind: kind,
 	}
 
-	// Use REST mapper to find the full GVR
 	mapping, err := c.restMapper.RESTMapping(gvk.GroupKind())
 	if err != nil {
 		return schema.GroupVersionResource{}, false, fmt.Errorf("failed to map kind=%s to GVR: %w", kind, err)
 	}
 
 	return mapping.Resource, mapping.Scope.Name() == meta.RESTScopeNameNamespace, nil
+}
+
+// knownKinds maps common Kubernetes kinds (lowercase) to their full GVK
+var knownKinds = map[string]schema.GroupVersionKind{
+	// Core resources (no group, v1)
+	"pod":                {"", "v1", "Pod"},
+	"service":            {"", "v1", "Service"},
+	"configmap":          {"", "v1", "ConfigMap"},
+	"secret":             {"", "v1", "Secret"},
+	"namespace":          {"", "v1", "Namespace"},
+	"node":               {"", "v1", "Node"},
+	"persistentvolume":   {"", "v1", "PersistentVolume"},
+	"persistentvolumeclaim": {"", "v1", "PersistentVolumeClaim"},
+	"serviceaccount":     {"", "v1", "ServiceAccount"},
+	"endpoints":          {"", "v1", "Endpoints"},
+	"event":              {"", "v1", "Event"},
+	"resourcequota":      {"", "v1", "ResourceQuota"},
+	"limitrange":         {"", "v1", "LimitRange"},
+
+	// apps/v1
+	"deployment":         {"apps", "v1", "Deployment"},
+	"statefulset":        {"apps", "v1", "StatefulSet"},
+	"daemonset":          {"apps", "v1", "DaemonSet"},
+	"replicaset":         {"apps", "v1", "ReplicaSet"},
+
+	// batch/v1
+	"job":                {"batch", "v1", "Job"},
+	"cronjob":            {"batch", "v1", "CronJob"},
+
+	// networking.k8s.io/v1
+	"ingress":            {"networking.k8s.io", "v1", "Ingress"},
+	"networkpolicy":      {"networking.k8s.io", "v1", "NetworkPolicy"},
+
+	// rbac.authorization.k8s.io/v1
+	"role":               {"rbac.authorization.k8s.io", "v1", "Role"},
+	"rolebinding":        {"rbac.authorization.k8s.io", "v1", "RoleBinding"},
+	"clusterrole":        {"rbac.authorization.k8s.io", "v1", "ClusterRole"},
+	"clusterrolebinding": {"rbac.authorization.k8s.io", "v1", "ClusterRoleBinding"},
+
+	// storage.k8s.io/v1
+	"storageclass":       {"storage.k8s.io", "v1", "StorageClass"},
+
+	// autoscaling/v2
+	"horizontalpodautoscaler": {"autoscaling", "v2", "HorizontalPodAutoscaler"},
+}
+
+// knownGVRs provides hardcoded fallback GVR mappings for common resources
+// This is used when REST mapper discovery fails (e.g., in test environments)
+var knownGVRs = map[string]struct {
+	gvr        schema.GroupVersionResource
+	namespaced bool
+}{
+	// Core resources
+	"pod":                {schema.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}, true},
+	"service":            {schema.GroupVersionResource{Group: "", Version: "v1", Resource: "services"}, true},
+	"configmap":          {schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}, true},
+	"secret":             {schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}, true},
+	"namespace":          {schema.GroupVersionResource{Group: "", Version: "v1", Resource: "namespaces"}, false},
+	"node":               {schema.GroupVersionResource{Group: "", Version: "v1", Resource: "nodes"}, false},
+	"persistentvolume":   {schema.GroupVersionResource{Group: "", Version: "v1", Resource: "persistentvolumes"}, false},
+	"persistentvolumeclaim": {schema.GroupVersionResource{Group: "", Version: "v1", Resource: "persistentvolumeclaims"}, true},
+	"serviceaccount":     {schema.GroupVersionResource{Group: "", Version: "v1", Resource: "serviceaccounts"}, true},
+	"endpoints":          {schema.GroupVersionResource{Group: "", Version: "v1", Resource: "endpoints"}, true},
+	"event":              {schema.GroupVersionResource{Group: "", Version: "v1", Resource: "events"}, true},
+	"resourcequota":      {schema.GroupVersionResource{Group: "", Version: "v1", Resource: "resourcequotas"}, true},
+	"limitrange":         {schema.GroupVersionResource{Group: "", Version: "v1", Resource: "limitranges"}, true},
+
+	// apps/v1
+	"deployment":         {schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}, true},
+	"statefulset":        {schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "statefulsets"}, true},
+	"daemonset":          {schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "daemonsets"}, true},
+	"replicaset":         {schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "replicasets"}, true},
+
+	// batch/v1
+	"job":                {schema.GroupVersionResource{Group: "batch", Version: "v1", Resource: "jobs"}, true},
+	"cronjob":            {schema.GroupVersionResource{Group: "batch", Version: "v1", Resource: "cronjobs"}, true},
+
+	// networking.k8s.io/v1
+	"ingress":            {schema.GroupVersionResource{Group: "networking.k8s.io", Version: "v1", Resource: "ingresses"}, true},
+	"networkpolicy":      {schema.GroupVersionResource{Group: "networking.k8s.io", Version: "v1", Resource: "networkpolicies"}, true},
+
+	// rbac.authorization.k8s.io/v1
+	"role":               {schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "roles"}, true},
+	"rolebinding":        {schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "rolebindings"}, true},
+	"clusterrole":        {schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterroles"}, false},
+	"clusterrolebinding": {schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterrolebindings"}, false},
+
+	// storage.k8s.io/v1
+	"storageclass":       {schema.GroupVersionResource{Group: "storage.k8s.io", Version: "v1", Resource: "storageclasses"}, false},
+
+	// autoscaling/v2
+	"horizontalpodautoscaler": {schema.GroupVersionResource{Group: "autoscaling", Version: "v2", Resource: "horizontalpodautoscalers"}, true},
 }
 
 // Config returns the underlying REST config (useful for debugging or extensions).
