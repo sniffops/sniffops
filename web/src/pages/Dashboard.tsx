@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, ShieldAlert, Activity, Wrench, ArrowRight } from 'lucide-react'
+import { Activity, Wrench, ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -9,10 +9,10 @@ import { type Stats, type Trace, type RiskLevel } from '@/lib/types'
 import { format } from 'date-fns'
 
 const riskConfig = {
-  critical: { label: 'Critical', icon: ShieldAlert, color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-l-4 border-red-500' },
-  high: { label: 'High', icon: AlertTriangle, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-l-4 border-orange-500' },
-  medium: { label: 'Medium', icon: null, color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-l-4 border-yellow-400' },
-  low: { label: 'Low', icon: null, color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-l-4 border-green-500' },
+  critical: { label: 'Critical', color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-l-4 border-red-500' },
+  high: { label: 'High', color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-l-4 border-orange-500' },
+  medium: { label: 'Medium', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-l-4 border-yellow-400' },
+  low: { label: 'Low', color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-l-4 border-green-500' },
 }
 
 const riskOrder: RiskLevel[] = ['critical', 'high', 'medium', 'low']
@@ -65,7 +65,6 @@ export function Dashboard() {
         {riskOrder.map((level) => {
           const count = distribution[level] || 0
           const config = riskConfig[level]
-          const Icon = config.icon
           return (
             <Card
               key={level}
@@ -76,7 +75,6 @@ export function Dashboard() {
                 <CardTitle className="text-sm font-medium capitalize">
                   {config.label} Risk
                 </CardTitle>
-                {Icon && <Icon className={`h-4 w-4 ${config.color}`} />}
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{count}</div>
@@ -139,16 +137,16 @@ export function Dashboard() {
           <div className="space-y-4">
             {recentTraces.map((trace) => {
               const config = riskConfig[trace.risk_level]
-              const Icon = config.icon
               return (
                 <div
                   key={trace.id}
                   className="flex items-start gap-4 rounded-lg border p-4 transition-colors hover:bg-accent cursor-pointer"
                   onClick={() => navigate('/traces')}
                 >
-                  <div className={`rounded-lg p-2 ${config.bg}`}>
-                    {Icon && <Icon className={`h-4 w-4 ${config.color}`} />}
-                    {!Icon && <div className="h-4 w-4" />}
+                  <div className={`rounded-lg p-2 ${config.bg} flex items-center justify-center min-w-[2rem]`}>
+                    <span className={`text-xs font-semibold ${config.color}`}>
+                      {trace.risk_level.slice(0, 1).toUpperCase()}
+                    </span>
                   </div>
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
