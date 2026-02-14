@@ -3,7 +3,7 @@
 BINARY_NAME=sniffops
 VERSION?=v0.1.0
 BUILD_DIR=bin
-GO=go
+GO?=$(shell which go || echo /home/smlee/go/bin/go)
 GOFLAGS=-ldflags="-X main.version=$(VERSION)"
 
 # 기본 타겟
