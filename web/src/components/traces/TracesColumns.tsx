@@ -3,7 +3,7 @@ import { ArrowUpDown, ShieldAlert, AlertTriangle, AlertCircle, Info, Check, X } 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { type Trace, type RiskLevel } from '@/lib/types'
-import { formatDistanceToNow } from 'date-fns'
+import { format } from 'date-fns'
 
 const riskConfig = {
   critical: { label: 'Critical', variant: 'destructive' as const, icon: ShieldAlert },
@@ -30,8 +30,8 @@ export const tracesColumns = (_setSelectedTrace: (trace: Trace) => void): Column
     cell: ({ row }) => {
       const timestamp = row.getValue('timestamp') as number
       return (
-        <div className="text-sm">
-          {formatDistanceToNow(new Date(timestamp * 1000), { addSuffix: true })}
+        <div className="text-sm font-mono whitespace-nowrap">
+          {format(new Date(timestamp), 'yyyy-MM-dd HH:mm:ss')}
         </div>
       )
     },
@@ -69,14 +69,14 @@ export const tracesColumns = (_setSelectedTrace: (trace: Trace) => void): Column
       )
     },
     cell: ({ row }) => {
-      return <div className="font-medium">{row.getValue('tool_name')}</div>
+      return <div className="font-medium text-sm max-w-[120px] truncate">{row.getValue('tool_name')}</div>
     },
   },
   {
     accessorKey: 'namespace',
     header: 'Namespace',
     cell: ({ row }) => {
-      return <Badge variant="outline">{row.getValue('namespace')}</Badge>
+      return <Badge variant="outline" className="max-w-[100px] truncate text-xs">{row.getValue('namespace')}</Badge>
     },
   },
   {
@@ -84,19 +84,7 @@ export const tracesColumns = (_setSelectedTrace: (trace: Trace) => void): Column
     header: 'Resource',
     cell: ({ row }) => {
       const resource = row.getValue('target_resource') as string
-      return <div className="max-w-[200px] truncate text-sm">{resource}</div>
-    },
-  },
-  {
-    accessorKey: 'command',
-    header: 'Command',
-    cell: ({ row }) => {
-      const command = row.getValue('command') as string
-      return (
-        <div className="max-w-[300px] truncate text-sm font-mono text-muted-foreground">
-          {command}
-        </div>
-      )
+      return <div className="max-w-[180px] truncate text-sm">{resource}</div>
     },
   },
   {
@@ -133,7 +121,7 @@ export const tracesColumns = (_setSelectedTrace: (trace: Trace) => void): Column
     },
     cell: ({ row }) => {
       const latency = row.getValue('latency_ms') as number
-      return <div className="text-sm">{latency}ms</div>
+      return <div className="text-sm font-mono whitespace-nowrap">{latency}ms</div>
     },
   },
 ]
