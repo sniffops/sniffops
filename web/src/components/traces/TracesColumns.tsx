@@ -1,5 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table'
-import { ArrowUpDown, ShieldAlert, AlertTriangle, AlertCircle, Info, Check, X } from 'lucide-react'
+import { ArrowUpDown, ShieldAlert, AlertTriangle, Check, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { type Trace, type RiskLevel } from '@/lib/types'
@@ -8,8 +8,8 @@ import { format } from 'date-fns'
 const riskConfig = {
   critical: { label: 'Critical', variant: 'destructive' as const, icon: ShieldAlert },
   high: { label: 'High', variant: 'default' as const, icon: AlertTriangle },
-  medium: { label: 'Medium', variant: 'secondary' as const, icon: AlertCircle },
-  low: { label: 'Low', variant: 'outline' as const, icon: Info },
+  medium: { label: 'Medium', variant: 'secondary' as const, icon: null },
+  low: { label: 'Low', variant: 'outline' as const, icon: null },
 }
 
 export const tracesColumns = (_setSelectedTrace: (trace: Trace) => void): ColumnDef<Trace>[] => [
@@ -45,7 +45,7 @@ export const tracesColumns = (_setSelectedTrace: (trace: Trace) => void): Column
       const Icon = config.icon
       return (
         <Badge variant={config.variant} className="gap-1">
-          <Icon className="h-3 w-3" />
+          {Icon && <Icon className="h-3 w-3" />}
           {config.label}
         </Badge>
       )

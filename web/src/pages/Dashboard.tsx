@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, ShieldAlert, AlertCircle, Info, Activity, Wrench, ArrowRight } from 'lucide-react'
+import { AlertTriangle, ShieldAlert, Activity, Wrench, ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -11,8 +11,8 @@ import { format } from 'date-fns'
 const riskConfig = {
   critical: { label: 'Critical', icon: ShieldAlert, color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-l-4 border-red-500' },
   high: { label: 'High', icon: AlertTriangle, color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-l-4 border-orange-500' },
-  medium: { label: 'Medium', icon: AlertCircle, color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-l-4 border-yellow-400' },
-  low: { label: 'Low', icon: Info, color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-l-4 border-green-500' },
+  medium: { label: 'Medium', icon: null, color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-l-4 border-yellow-400' },
+  low: { label: 'Low', icon: null, color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-l-4 border-green-500' },
 }
 
 const riskOrder: RiskLevel[] = ['critical', 'high', 'medium', 'low']
@@ -76,7 +76,7 @@ export function Dashboard() {
                 <CardTitle className="text-sm font-medium capitalize">
                   {config.label} Risk
                 </CardTitle>
-                <Icon className={`h-4 w-4 ${config.color}`} />
+                {Icon && <Icon className={`h-4 w-4 ${config.color}`} />}
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{count}</div>
@@ -147,7 +147,8 @@ export function Dashboard() {
                   onClick={() => navigate('/traces')}
                 >
                   <div className={`rounded-lg p-2 ${config.bg}`}>
-                    <Icon className={`h-4 w-4 ${config.color}`} />
+                    {Icon && <Icon className={`h-4 w-4 ${config.color}`} />}
+                    {!Icon && <div className="h-4 w-4" />}
                   </div>
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
