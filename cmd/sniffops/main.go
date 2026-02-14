@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/sniffops/sniffops/internal/server"
+	"github.com/sniffops/sniffops/internal/web"
 )
 
 var (
@@ -34,16 +35,17 @@ func main() {
 	}
 
 	// web 명령어 - 웹 UI HTTP 서버 시작
+	var webPort int
 	webCmd := &cobra.Command{
 		Use:   "web",
 		Short: "Start web UI server",
 		Long:  "Start HTTP server to serve web-based trace viewer UI.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runWeb()
+			return runWeb(webPort)
 		},
 	}
 
-	webCmd.Flags().IntP("port", "p", 3000, "HTTP server port")
+	webCmd.Flags().IntVarP(&webPort, "port", "p", 3000, "HTTP server port")
 
 	rootCmd.AddCommand(serveCmd, webCmd)
 
@@ -93,12 +95,36 @@ func runServe() error {
 }
 
 // runWeb starts the web UI HTTP server
-func runWeb() error {
-	// TODO: 웹 UI 서버 시작
-	// 1. SQLite DB 연결
-	// 2. HTTP 핸들러 등록 (/api/traces, /api/stats)
-	// 3. 임베디드 React UI 서빙
-	fmt.Fprintln(os.Stderr, "SniffOps web UI server starting...")
-	fmt.Fprintln(os.Stderr, "Web server implementation: TODO")
-	return fmt.Errorf("web server not implemented yet")
+func runWeb(port int) error {
+	// Context with signal handling
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Signal handling (SIGINT, SIGTERM)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		fmt.Fprintln(os.Stderr, "\nSniffOps web server shutting down...")
+		cancel()
+	}()
+
+	// Initialize web server
+	cfg := &web.Config{
+		Port:        port,
+		TraceDBPath: "", // Default path (~/.sniffops/traces.db)
+	}
+
+	srv, err := web.New(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to create web server: %w", err)
+	}
+	defer srv.Close()
+
+	// Start server (blocking)
+	if err := srv.Run(ctx); err != nil {
+		return fmt.Errorf("web server failed: %w", err)
+	}
+
+	return nil
 }

@@ -9,7 +9,7 @@ GOFLAGS=-ldflags="-X main.version=$(VERSION)"
 # 기본 타겟
 .DEFAULT_GOAL := build
 
-.PHONY: all build run test clean install fmt lint help
+.PHONY: all build build-web build-backend build-all run test clean install fmt lint help
 
 ## all: 전체 빌드 (의존성 정리 + 빌드)
 all: deps build
@@ -20,11 +20,29 @@ deps:
 	$(GO) mod download
 	$(GO) mod tidy
 
-## build: 바이너리 빌드
-build:
+## build: 바이너리 빌드 (백엔드만)
+build: build-backend
+
+## build-web: 프론트엔드 빌드 (React/Vite)
+build-web:
+	@echo ">> Building frontend..."
+	@if [ -f web/package.json ]; then \
+		cd web && npm install && npm run build; \
+		echo ">> Copying frontend assets to internal/web/dist..."; \
+		rm -rf ../internal/web/dist && cp -r dist ../internal/web/dist; \
+	else \
+		echo ">> Frontend not initialized. Using placeholder..."; \
+	fi
+
+## build-backend: Go 백엔드 빌드
+build-backend:
 	@echo ">> Building $(BINARY_NAME) $(VERSION)..."
 	@mkdir -p $(BUILD_DIR)
 	$(GO) build $(GOFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/sniffops
+
+## build-all: 프론트엔드 + 백엔드 전체 빌드
+build-all: build-web build-backend
+	@echo "✅ SniffOps built successfully (frontend + backend)"
 
 ## run: MCP 서버 실행 (개발용)
 run: build
@@ -45,6 +63,8 @@ test:
 clean:
 	@echo ">> Cleaning build artifacts..."
 	rm -rf $(BUILD_DIR)
+	rm -rf web/dist
+	rm -rf web/node_modules
 	$(GO) clean
 
 ## install: 바이너리를 $GOPATH/bin 에 설치
