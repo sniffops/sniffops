@@ -31,6 +31,18 @@ export function TraceDetailSheet({ trace, open, onClose }: TraceDetailSheetProps
   const config = riskConfig[trace.risk_level as RiskLevel]
   const Icon = config.icon
 
+  // Helper to format output as JSON if possible
+  const formatOutput = (output: string): { isJson: boolean; content: string } => {
+    try {
+      const parsed = JSON.parse(output)
+      return { isJson: true, content: JSON.stringify(parsed, null, 2) }
+    } catch {
+      return { isJson: false, content: output }
+    }
+  }
+
+  const formattedOutput = trace.output ? formatOutput(trace.output) : null
+
   return (
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent className="sm:max-w-2xl">
@@ -40,11 +52,11 @@ export function TraceDetailSheet({ trace, open, onClose }: TraceDetailSheetProps
             Trace Details
           </SheetTitle>
           <SheetDescription>
-            {format(new Date(trace.timestamp * 1000), 'PPpp')}
+            {format(new Date(trace.timestamp), 'yyyy-MM-dd HH:mm:ss')}
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="h-[calc(100vh-8rem)] mt-6">
+        <ScrollArea className="h-[calc(100vh-8rem)] mt-6 pr-6">
           <div className="space-y-6">
             {/* Risk & Status */}
             <div>
@@ -69,21 +81,21 @@ export function TraceDetailSheet({ trace, open, onClose }: TraceDetailSheetProps
             <div>
               <h3 className="text-sm font-medium mb-3">Tool Information</h3>
               <dl className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Tool</dt>
-                  <dd className="font-medium">{trace.tool_name}</dd>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground flex-shrink-0">Tool</dt>
+                  <dd className="font-medium text-right break-words">{trace.tool_name}</dd>
                 </div>
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Namespace</dt>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground flex-shrink-0">Namespace</dt>
                   <dd><Badge variant="outline">{trace.namespace}</Badge></dd>
                 </div>
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Resource Kind</dt>
-                  <dd className="font-medium">{trace.resource_kind}</dd>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground flex-shrink-0">Resource Kind</dt>
+                  <dd className="font-medium text-right break-words">{trace.resource_kind}</dd>
                 </div>
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Target Resource</dt>
-                  <dd className="font-mono text-xs break-all">{trace.target_resource}</dd>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted-foreground flex-shrink-0">Target Resource</dt>
+                  <dd className="font-mono text-xs break-words text-right">{trace.target_resource}</dd>
                 </div>
               </dl>
             </div>
@@ -99,13 +111,15 @@ export function TraceDetailSheet({ trace, open, onClose }: TraceDetailSheetProps
             </div>
 
             {/* Output */}
-            {trace.output && (
+            {formattedOutput && (
               <>
                 <Separator />
                 <div>
-                  <h3 className="text-sm font-medium mb-3">Output</h3>
-                  <div className="rounded-md bg-muted p-3 max-h-[300px] overflow-auto">
-                    <pre className="text-xs font-mono whitespace-pre-wrap">{trace.output}</pre>
+                  <h3 className="text-sm font-medium mb-3">
+                    Output {formattedOutput.isJson && <span className="text-muted-foreground font-normal">(JSON)</span>}
+                  </h3>
+                  <div className="rounded-md bg-muted p-3 max-h-[400px] overflow-y-auto overflow-x-auto">
+                    <pre className="text-xs font-mono whitespace-pre">{formattedOutput.content}</pre>
                   </div>
                 </div>
               </>
