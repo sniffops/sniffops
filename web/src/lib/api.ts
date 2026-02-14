@@ -31,8 +31,8 @@ export async function fetchTraceById(id: string): Promise<Trace> {
   return response.json()
 }
 
-export async function fetchStats(period: string = '24h'): Promise<Stats> {
-  const response = await fetch(`${API_BASE}/stats?period=${period}`)
+export async function fetchStats(period: string = ''): Promise<Stats> {
+  const response = await fetch(`${API_BASE}/stats${period ? `?period=${period}` : ''}`)
   
   if (!response.ok) {
     throw new Error(`Failed to fetch stats: ${response.statusText}`)

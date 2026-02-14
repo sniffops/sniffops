@@ -76,7 +76,7 @@ export function TraceDetailSheet({ trace, open, onClose }: TraceDetailSheetProps
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent className="sm:max-w-2xl">
+      <SheetContent className="sm:max-w-3xl">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Icon className="h-5 w-5" />
@@ -153,8 +153,8 @@ export function TraceDetailSheet({ trace, open, onClose }: TraceDetailSheetProps
                         <TabsTrigger value="table">Table</TabsTrigger>
                       </TabsList>
                       <TabsContent value="json" className="mt-2">
-                        <div className="rounded-md bg-muted p-3 max-h-[400px] overflow-y-auto overflow-x-auto">
-                          <pre className="text-xs font-mono whitespace-pre">{formattedOutput.content}</pre>
+                        <div className="rounded-md bg-muted p-3 max-h-[400px] overflow-auto">
+                          <pre className="text-xs font-mono whitespace-pre-wrap break-all">{formattedOutput.content}</pre>
                         </div>
                       </TabsContent>
                       <TabsContent value="table" className="mt-2">
@@ -162,7 +162,7 @@ export function TraceDetailSheet({ trace, open, onClose }: TraceDetailSheetProps
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead className="w-[250px]">Key</TableHead>
+                                <TableHead className="w-[180px] min-w-[120px]">Key</TableHead>
                                 <TableHead>Value</TableHead>
                               </TableRow>
                             </TableHeader>
@@ -181,8 +181,8 @@ export function TraceDetailSheet({ trace, open, onClose }: TraceDetailSheetProps
                       </TabsContent>
                     </Tabs>
                   ) : (
-                    <div className="rounded-md bg-muted p-3 max-h-[400px] overflow-y-auto overflow-x-auto">
-                      <pre className="text-xs font-mono whitespace-pre">{formattedOutput.content}</pre>
+                    <div className="rounded-md bg-muted p-3 max-h-[400px] overflow-auto">
+                      <pre className="text-xs font-mono whitespace-pre-wrap break-all">{formattedOutput.content}</pre>
                     </div>
                   )}
                 </div>

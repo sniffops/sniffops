@@ -101,11 +101,8 @@ func (s *Server) handleStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse period parameter (optional)
+	// Parse period parameter (optional, empty = all-time)
 	period := r.URL.Query().Get("period")
-	if period == "" {
-		period = "24h"
-	}
 
 	// Get statistics
 	stats, err := trace.GetStats(s.store.DB(), period)
